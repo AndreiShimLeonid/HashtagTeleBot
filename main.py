@@ -2,7 +2,7 @@ import telebot
 from datetime import datetime, timedelta
 
 from check import check_message
-from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report
+from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report, get_yearly_report
 
 bot = telebot.TeleBot(read_token_from_file('token'))
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
@@ -65,6 +65,23 @@ def send_monthly_report(message):
 
     bot.reply_to(message, response)
 
+
+@bot.message_handler(commands=['yearly_report'])
+def send_yearly_report(message):
+    start_date = '2024-05-01'
+
+    report = get_yearly_report(start_date)
+
+    response = f"Общие итоги с 1 мая 2024 года по текущую дату:\n"
+
+    for username, hashtags in report.items():
+        response += f"\n@{username}:\n"
+        for hashtag, count in hashtags.items():
+            response += f"  {hashtag}: {count}\n"
+
+    bot.reply_to(message, response)
+
+
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document'])
 def handle_message(message):
     user_id = message.from_user.id
@@ -83,4 +100,3 @@ def handle_message(message):
 
 
 bot.polling(non_stop=True)
-

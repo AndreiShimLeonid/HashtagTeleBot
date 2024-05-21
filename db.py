@@ -127,3 +127,30 @@ def get_monthly_report(previous_month):
     cursor.close()
     conn.close()
     return report
+
+
+# Функция для получения общих итогов с 1 мая 2024 года по текущую дату
+def get_yearly_report(start_date):
+    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT username, hashtag, COUNT(*) as count 
+    FROM hashtag_stats
+    WHERE date >= ?
+    GROUP BY username, hashtag
+    ORDER BY username, hashtag
+    ''', (start_date,))
+
+    rows = cursor.fetchall()
+
+    report = {}
+
+    for row in rows:
+        username, hashtag, count = row
+        if username not in report:
+            report[username] = {}
+        report[username][hashtag] = count
+
+    cursor.close()
+    conn.close()
+    return report
