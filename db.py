@@ -100,3 +100,30 @@ def get_top_users(current_month, previous_month):
     cursor.close()
     conn.close()
     return top_users
+
+
+# Функция для получения подробной статистики всех пользователей за прошедший месяц
+def get_monthly_report(previous_month):
+    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT username, hashtag, COUNT(*) as count 
+    FROM hashtag_stats
+    WHERE strftime('%Y-%m', date) = ?
+    GROUP BY username, hashtag
+    ORDER BY username, hashtag
+    ''', (previous_month,))
+
+    rows = cursor.fetchall()
+
+    report = {}
+
+    for row in rows:
+        username, hashtag, count = row
+        if username not in report:
+            report[username] = {}
+        report[username][hashtag] = count
+
+    cursor.close()
+    conn.close()
+    return report

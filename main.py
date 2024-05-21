@@ -2,7 +2,7 @@ import telebot
 from datetime import datetime, timedelta
 
 from check import check_message
-from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users
+from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report
 
 bot = telebot.TeleBot(read_token_from_file('token'))
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
@@ -48,6 +48,22 @@ def send_top_users(message):
 
     bot.reply_to(message, response)
 
+
+# Команда для получения подробной статистики всех пользователей за прошедший месяц
+@bot.message_handler(commands=['monthly_report'])
+def send_monthly_report(message):
+    previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+
+    report = get_monthly_report(previous_month)
+
+    response = f"Подробная статистика за прошедший месяц:\n"
+
+    for username, hashtags in report.items():
+        response += f"\n@{username}:\n"
+        for hashtag, count in hashtags.items():
+            response += f"  {hashtag}: {count}\n"
+
+    bot.reply_to(message, response)
 
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document'])
 def handle_message(message):
