@@ -11,6 +11,7 @@ start_date = '2024-05-01'
 if __name__ == '__main__':
     create_table()
 
+
 @bot.message_handler(commands=['stats'])
 def send_stats(message):
     """
