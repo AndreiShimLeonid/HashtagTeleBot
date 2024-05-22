@@ -6,12 +6,10 @@ from db import create_table, read_token_from_file, update_stats, get_stats, get_
 
 bot = telebot.TeleBot(read_token_from_file('token'))
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
+# start_date = ''
 
 if __name__ == '__main__':
     create_table()
-
-
-# Функция для обновления статистики в базе данных
 
 
 @bot.message_handler(commands=['stats'])
