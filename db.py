@@ -1,15 +1,28 @@
 import sqlite3
 
+users_file_name = 'users.txt'
+
 
 def get_users_list():
+    """
+    This method reads file with users
+    :return: users list if the file exists
+            0 if the file doesn't exist
+    """
     users = []
-    with open('users', 'r') as file:
-        for line in file:
-            line = line.rstrip()
-            # Печать строки (или обработка строки по вашему усмотрению)
-            users.append(line)
-    print('allowed users: ', *users)
-    return users
+    try:
+        with open(users_file_name, 'r') as file:
+            for line in file:
+                line = line.rstrip()
+                # Печать строки (или обработка строки по вашему усмотрению)
+                users.append(line)
+        print('allowed users: ', *users)
+        return users
+    except FileNotFoundError:
+        with open(users_file_name, 'w'):
+            pass
+        print(f'File {users_file_name} has not been found. New file has been created')
+        return 0
 
 
 def add_user(username: str):
@@ -25,13 +38,14 @@ def add_user(username: str):
             print(f'user {username} is already in the users list')
             return 0
         else:
-            with open('users', 'a') as file:
+            with open(users_file_name, 'a') as file:
                 file.write(f'{username}\n')
                 print(f'user {username} has been added to the users list')
                 return 1
     else:
         print(f'wrong username {username}')
         return -1
+
 
 def remove_user(username: str):
     """
@@ -44,9 +58,9 @@ def remove_user(username: str):
     if type(username) is str and '@' in username and len(username) > 1:
         users = get_users_list()
         if username in users:
-            with open('users','r') as file:
+            with open(users_file_name, 'r') as file:
                 lines = file.readlines()
-            with open('users', 'w') as file:
+            with open(users_file_name, 'w') as file:
                 for line in lines:
                     if line.rstrip() != username:
                         file.write(line.rstrip() + '\n')
@@ -58,6 +72,7 @@ def remove_user(username: str):
     else:
         print(f'wrong username {username}')
         return -1
+
 
 def read_token_from_file(file: str):
     with open(file, 'r') as file:
