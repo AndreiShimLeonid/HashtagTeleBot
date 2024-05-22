@@ -6,14 +6,18 @@ from db import create_table, read_token_from_file, update_stats, get_stats, get_
 
 bot = telebot.TeleBot(read_token_from_file('token'))
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
-# start_date = ''
+start_date = '2024-05-01'
 
 if __name__ == '__main__':
     create_table()
 
-
 @bot.message_handler(commands=['stats'])
 def send_stats(message):
+    """
+    Sends personal stats for current and previous months
+    :param message: command /stats
+    :return:
+    """
     user_id = message.from_user.id
     username = message.from_user.username
     current_month = datetime.fromtimestamp(message.date).strftime('%Y-%m')
@@ -30,6 +34,11 @@ def send_stats(message):
 # Команда для получения топ 5 пользователей
 @bot.message_handler(commands=['top'])
 def send_top_users(message):
+    """
+    Sends top 5 users stats for current and previous months
+    :param message: command /top
+    :return:
+    """
     current_month = datetime.fromtimestamp(message.date).strftime('%Y-%m')
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
 
@@ -50,8 +59,12 @@ def send_top_users(message):
 # Команда для получения подробной статистики всех пользователей за прошедший месяц
 @bot.message_handler(commands=['monthly_report'])
 def send_monthly_report(message):
+    """
+    Sends all users statistics for current and previous months
+    :param message: command /monthly_stats
+    :return:
+    """
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-
     report = get_monthly_report(previous_month)
 
     response = f"Подробная статистика за прошедший месяц:\n"
@@ -66,7 +79,12 @@ def send_monthly_report(message):
 
 @bot.message_handler(commands=['yearly_report'])
 def send_yearly_report(message):
-    start_date = '2024-05-01'
+    """
+    Send report from start date till now
+    :param message: command /yearly_report
+    :return:
+    """
+    global start_date
 
     report = get_yearly_report(start_date)
 
