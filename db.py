@@ -1,6 +1,64 @@
 import sqlite3
 
 
+def get_users_list():
+    users = []
+    with open('users', 'r') as file:
+        for line in file:
+            line = line.rstrip()
+            # Печать строки (или обработка строки по вашему усмотрению)
+            users.append(line)
+    print('allowed users: ', *users)
+    return users
+
+
+def add_user(username: str):
+    """
+    This method performs the addition of new user to the user list.
+    :param username: username, example: @username
+    :return: 0 if the username is already in the users list
+            1 if the username has been added to the users list
+            -1 if the username type is not string, '@' is absent and the length is less or equal 1
+    """
+    if type(username) is str and '@' in username and len(username) > 1:
+        if username in get_users_list():
+            print(f'user {username} is already in the users list')
+            return 0
+        else:
+            with open('users', 'a') as file:
+                file.write(f'{username}\n')
+                print(f'user {username} has been added to the users list')
+                return 1
+    else:
+        print(f'wrong username {username}')
+        return -1
+
+def remove_user(username: str):
+    """
+    This method performs the deletion of the user from the user list.
+    :param username: username, example: @username
+    :return: 0 if the username is not in the users list
+            1 if the username has been deleted from the users list
+            -1 if the username type is not string, '@' is absent and the length is less or equal 1
+    """
+    if type(username) is str and '@' in username and len(username) > 1:
+        users = get_users_list()
+        if username in users:
+            with open('users','r') as file:
+                lines = file.readlines()
+            with open('users', 'w') as file:
+                for line in lines:
+                    if line.rstrip() != username:
+                        file.write(line.rstrip() + '\n')
+            print(f'user {username} has been deleted from the users list')
+            return 1
+        else:
+            print(f'failed to find {username} in the users list')
+            return 0
+    else:
+        print(f'wrong username {username}')
+        return -1
+
 def read_token_from_file(file: str):
     with open(file, 'r') as file:
         # Чтение одной строки из файла

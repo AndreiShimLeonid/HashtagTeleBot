@@ -3,6 +3,8 @@ import unittest
 import sqlite3
 import random
 from datetime import datetime, timedelta
+
+import db
 from db import update_stats, get_stats, get_top_users, get_monthly_report, get_yearly_report
 timestamp = 1629398400
 print(type(timestamp))
@@ -10,6 +12,18 @@ date_time = datetime.fromtimestamp(timestamp)
 print(date_time.date())
 print(date_time.strftime('%Y-%m-%d %H:%M:%S'))
 
+db.get_users_list()
+db.add_user('@shimandrei')
+db.get_users_list()
+db.add_user('@user1')
+db.add_user('@user2')
+db.add_user('@user3')
+db.add_user('@user4')
+db.get_users_list()
+db.remove_user('user')
+db.remove_user('@user')
+db.remove_user('@user1')
+db.get_users_list()
 # conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
 # cursor = conn.cursor()
 # cursor.execute('''
@@ -24,15 +38,15 @@ print(date_time.strftime('%Y-%m-%d %H:%M:%S'))
 #
 # cursor.close()
 # conn.close()
-days = [i for i in range(10, 28)]
-months = [i for i in range(1, 10)]
-users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
-hashtags = ['#добрый', '#недобрый']
-for i in range(200):
-    user, user_id = random.choice(users)
-    date = f'2024-0{random.choice(months)}-{random.choice(days)}'
-    hashtag = random.choice(hashtags)
-    update_stats(user_id, user, date, hashtag)
+# days = [i for i in range(10, 28)]
+# months = [i for i in range(1, 10)]
+# users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
+# hashtags = ['#добрый', '#недобрый']
+# for i in range(200):
+#     user, user_id = random.choice(users)
+#     date = f'2024-0{random.choice(months)}-{random.choice(days)}'
+#     hashtag = random.choice(hashtags)
+#     update_stats(user_id, user, date, hashtag)
 
 
 # update_stats(1, 'user1', '2024-04-01', '#hashtag1')
