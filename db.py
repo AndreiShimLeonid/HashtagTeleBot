@@ -1,6 +1,7 @@
 import sqlite3
 
 users_file_name = 'users.txt'
+stats_db_name = 'hashtag_stats.db'
 
 
 def get_users_list():
@@ -75,13 +76,22 @@ def remove_user(username: str):
 
 
 def read_token_from_file(file: str):
+    """
+    reads token from file
+    :param file: file name
+    :return: str
+    """
     with open(file, 'r') as file:
         # Чтение одной строки из файла
         return file.readline()
 
 
 def create_table():
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    Method creates table in the database
+    :return: nothing
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     # Создание таблицы для хранения статистики
     cursor.execute('''
@@ -99,7 +109,15 @@ def create_table():
 
 
 def update_stats(user_id, username, date, hashtag):
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    Method performs the addition of a new user to the database table
+    :param user_id: int
+    :param username: format @username
+    :param date: format YYYY-MM-DD
+    :param hashtag: format #hashtag
+    :return:
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
     INSERT INTO hashtag_stats (user_id, username, date, hashtag)
@@ -113,7 +131,16 @@ def update_stats(user_id, username, date, hashtag):
 
 
 def get_stats(user_id, username, current_month, previous_month):
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    Method gets user's stats from the database table with users' statistics
+    :param user_id: int
+    :param username: format @username
+    :param current_month: format YYYY-MM
+    :param previous_month: format YYYY-MM
+    :return: [0, alert: str] if there is no any statistics for the user within 2 last months
+            [1, statistics: str] if there is any statistics for the user within 2 last months
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
     SELECT hashtag, date FROM hashtag_stats
@@ -148,7 +175,13 @@ def get_stats(user_id, username, current_month, previous_month):
 
 # Функция для получения топ 5 пользователей по хештегам за текущий и прошлый месяцы
 def get_top_users(current_month, previous_month):
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    Method shows top 5 users by hashtags count within two months
+    :param current_month: format yyyy-mm
+    :param previous_month: format yyyy-mm
+    :return: str top 5 users info
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
     SELECT username, hashtag, strftime('%Y-%m', date) as month, COUNT(*) as count 
@@ -177,7 +210,12 @@ def get_top_users(current_month, previous_month):
 
 # Функция для получения подробной статистики всех пользователей за прошедший месяц
 def get_monthly_report(previous_month):
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    This method shows hashtags statistics for previous month
+    :param previous_month: format YYYY-MM
+    :return: str previous month statistics
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
     SELECT username, hashtag, COUNT(*) as count 
@@ -204,7 +242,12 @@ def get_monthly_report(previous_month):
 
 # Функция для получения общих итогов с 1 мая 2024 года по текущую дату
 def get_yearly_report(start_date):
-    conn = sqlite3.connect('hashtag_stats.db', check_same_thread=False)
+    """
+    Shows statistics from start_date till now
+    :param start_date: format YYYY-MM-DD
+    :return: str report from start date
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
     SELECT username, hashtag, COUNT(*) as count 
