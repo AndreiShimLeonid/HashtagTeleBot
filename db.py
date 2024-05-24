@@ -95,14 +95,15 @@ def create_table():
     cursor = conn.cursor()
     # Создание таблицы для хранения статистики
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS hashtag_stats (
-        user_id INTEGER,
-        username TEXT,
-        date TEXT,
-        hashtag TEXT,
-        PRIMARY KEY (user_id, date, hashtag)
-    )
-    ''')
+        CREATE TABLE IF NOT EXISTS hashtag_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            username TEXT,
+            date TEXT,
+            hashtag TEXT,
+            UNIQUE(user_id, username, date, hashtag)
+        )
+        ''')
     conn.commit()
     cursor.close()
     conn.close()
@@ -122,7 +123,7 @@ def update_stats(user_id, username, date, hashtag):
     cursor.execute('''
     INSERT INTO hashtag_stats (user_id, username, date, hashtag)
     VALUES (?, ?, ?, ?)
-    ON CONFLICT(user_id, date, hashtag)
+    ON CONFLICT(user_id, username, date, hashtag)
     DO NOTHING
     ''', (user_id, username, date, hashtag))
     conn.commit()

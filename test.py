@@ -26,15 +26,15 @@ print(date_time.strftime('%Y-%m-%d %H:%M:%S'))
 #
 # cursor.close()
 # conn.close()
-# days = [i for i in range(10, 28)]
-# months = [i for i in range(1, 10)]
-# users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
-# hashtags = ['#добрый', '#недобрый']
-# for i in range(200):
-#     user, user_id = random.choice(users)
-#     date = f'2024-0{random.choice(months)}-{random.choice(days)}'
-#     hashtag = random.choice(hashtags)
-#     update_stats(user_id, user, date, hashtag)
+days = [i for i in range(10, 28)]
+months = [i for i in range(1, 10)]
+users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
+hashtags = ['#добрый', '#недобрый']
+for i in range(1000):
+    user, user_id = random.choice(users)
+    date = f'2024-0{random.choice(months)}-{random.choice(days)}'
+    hashtag = random.choice(hashtags)
+    update_stats(user_id, user, date, hashtag)
 
 
 # update_stats(1, 'user1', '2024-04-01', '#hashtag1')
