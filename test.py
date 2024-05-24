@@ -26,18 +26,25 @@ print(date_time.strftime('%Y-%m-%d %H:%M:%S'))
 #
 # cursor.close()
 # conn.close()
-days = [i for i in range(10, 28)]
-months = [i for i in range(1, 10)]
-users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
-hashtags = ['#добрый', '#недобрый']
-for i in range(1000):
-    user, user_id = random.choice(users)
-    date = f'2024-0{random.choice(months)}-{random.choice(days)}'
-    hashtag = random.choice(hashtags)
-    update_stats(user_id, user, date, hashtag)
+# days = [i for i in range(10, 28)]
+# months = [i for i in range(1, 10)]
+# users = [['user1', 1], ['user2', 2], ['user3', 3], ['user4', 4], ['user5', 5], ['user6', 6], ['user7',  7]]
+# hashtags = ['#добрый', '#недобрый']
+# for i in range(1000):
+#     user, user_id = random.choice(users)
+#     date = f'2024-0{random.choice(months)}-{random.choice(days)}'
+#     hashtag = random.choice(hashtags)
+#     update_stats(user_id, user, date, hashtag)
 
+db.add_user(user_id=1, first_name='Andrei', last_name='Shim', username='aka_Andrei')
+db.remove_user(user_id=1, username='aka_Andrei')
 
-# update_stats(1, 'user1', '2024-04-01', '#hashtag1')
+update_stats(1357737507, 'shimandrei', '2024-04-01', '#добрый')
+update_stats(1357737507, 'shimandrei', '2024-04-02', '#добрый')
+update_stats(1357737507, 'shimandrei', '2024-04-03', '#добрый')
+update_stats(1357737507, 'shimandrei', '2024-04-04', '#добрый')
+update_stats(1357737507, 'shimandrei', '2024-04-05', '#добрый')
+update_stats(1357737507, 'shimandrei', '2024-04-05', '#недобрый')
 # update_stats(1, 'user2', self.previous_date, '#hashtag1')
 # update_stats(1, 'user3', self.previous_date, '#hashtag1')
 # update_stats(1, 'user4', self.previous_date, '#hashtag1')

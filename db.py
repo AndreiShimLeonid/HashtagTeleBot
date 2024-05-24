@@ -1,6 +1,10 @@
+import json
+import os
 import sqlite3
 
-users_file_name = 'users.txt'
+import service
+
+users_file_name = 'user_info.txt'
 stats_db_name = 'hashtag_stats.db'
 
 
@@ -11,68 +15,92 @@ def get_users_list():
             0 if the file doesn't exist
     """
     users = []
-    try:
-        with open(users_file_name, 'r') as file:
-            for line in file:
-                line = line.rstrip()
-                # Печать строки (или обработка строки по вашему усмотрению)
-                users.append(line)
-        print('allowed users: ', *users)
-        return users
-    except FileNotFoundError:
+    if not os.path.exists(users_file_name):
         with open(users_file_name, 'w'):
             pass
         print(f'File {users_file_name} has not been found. New file has been created')
         return 0
+    with open(users_file_name, 'r', encoding='utf-8') as f:
+        for line in f:
+            user_info = json.loads(line)
+            users.append(f"ID: {user_info['id']} "
+                         f"Username: {user_info['username']} "
+                         f"Name: {user_info['first_name']} {user_info['last_name']}\n")
+        print('allowed users: \n', *users)
+        return users
 
 
-def add_user(username: str):
+def user_exists(id: int, username: str):
+    """
+    Checks if user exists
+    :param id: int
+    :param username: string
+    :return: True if user exists in the file
+            False if file doesn't exist or user doesn't exist in the file
+    """
+    if not os.path.exists(users_file_name):
+        return False
+    with open(users_file_name, 'r', encoding='utf-8') as f:
+        for line in f:
+            user_info = json.loads(line)
+            if (user_info['id'] == id and user_info['id'] is not None) or (user_info['username'] == username and user_info['username'] is not None):
+                return True
+    return False
+
+
+def add_user(user_id=None, first_name=None, last_name=None, username=None, language_code=None, is_bot=None):
     """
     This method performs the addition of new user to the user list.
-    :param username: username, example: @username
-    :return: 0 if the username is already in the users list
-            1 if the username has been added to the users list
-            -1 if the username type is not string, '@' is absent and the length is less or equal 1
+    :param user_id: unique int user id, None by default
+    :param language_code: ru, None by default
+    :param is_bot: false/true, None by default
+    :param last_name: string, None by default
+    :param first_name: string, None by default
+    :param username: username, None by default
+    :return: 0 if the username/user_id is already in the users list
+            1 if the username/user_id has been added to the users list
+            -1 if the username/user_id both are None
     """
-    if type(username) is str and '@' in username and len(username) > 1:
-        if username in get_users_list():
-            print(f'user {username} is already in the users list')
-            return 0
-        else:
-            with open(users_file_name, 'a') as file:
-                file.write(f'{username}\n')
-                print(f'user {username} has been added to the users list')
-                return 1
-    else:
-        print(f'wrong username {username}')
+    if user_id is None and username is None:
+        print(f'wrong username {username} and id {user_id}')
         return -1
+    if user_exists(user_id, username):
+        print(f"User with ID {user_id} or username {username} already exists.")
+        return 0
+    user_info = {
+        'id': user_id,
+        'first_name': first_name,
+        'last_name': last_name,
+        'username': username,
+        'language_code': language_code,
+        'is_bot': is_bot
+    }
+    with open(users_file_name, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(user_info, ensure_ascii=False) + '\n')
+    print(f"Saved user with ID {user_id} and username {username}.")
+    return 1
 
 
-def remove_user(username: str):
+def remove_user(user_id, username):
     """
     This method performs the deletion of the user from the user list.
-    :param username: username, example: @username
-    :return: 0 if the username is not in the users list
-            1 if the username has been deleted from the users list
-            -1 if the username type is not string, '@' is absent and the length is less or equal 1
+    :param username: username, example: username
+    :return: False if the username is not in the users list
+            True if the username has been deleted from the users list
     """
-    if type(username) is str and '@' in username and len(username) > 1:
-        users = get_users_list()
-        if username in users:
-            with open(users_file_name, 'r') as file:
-                lines = file.readlines()
-            with open(users_file_name, 'w') as file:
-                for line in lines:
-                    if line.rstrip() != username:
-                        file.write(line.rstrip() + '\n')
-            print(f'user {username} has been deleted from the users list')
-            return 1
-        else:
-            print(f'failed to find {username} in the users list')
-            return 0
-    else:
-        print(f'wrong username {username}')
-        return -1
+    if user_exists(user_id, username):
+        users = []
+        with open(users_file_name, 'r', encoding='utf-8') as f:
+            for line in f:
+                users.append(json.loads(line))
+        with open(users_file_name, 'w', encoding='utf-8') as f:
+            for user in users:
+                if user['id'] != user_id or user['username'] != username:
+                    f.write(json.dumps(user, ensure_ascii=False) + '\n')
+            print(f'User {username} with id {user_id} has been deleted from the users list')
+            return True
+    print(f'Failed to find {username} in the users list')
+    return False
 
 
 def read_token_from_file(file: str):
@@ -116,7 +144,8 @@ def update_stats(user_id, username, date, hashtag):
     :param username: format @username
     :param date: format YYYY-MM-DD
     :param hashtag: format #hashtag
-    :return:
+    :return: True - if stats have been updated
+            False - if stats haven't been updated because a conflict on user, date and hashtag has occurred
     """
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
@@ -126,9 +155,18 @@ def update_stats(user_id, username, date, hashtag):
     ON CONFLICT(user_id, username, date, hashtag)
     DO NOTHING
     ''', (user_id, username, date, hashtag))
+    if cursor.rowcount == 0:
+        print(f"Conflict occurred: The row {user_id, username, date, hashtag} already exists.")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return False
+
+    print(f"Row {user_id, username, date, hashtag} inserted successfully.")
     conn.commit()
     cursor.close()
     conn.close()
+    return True
 
 
 def get_stats(user_id, username, current_month, previous_month):
@@ -165,9 +203,10 @@ def get_stats(user_id, username, current_month, previous_month):
     response = f"Статистика для пользователя @{username}:\n"
 
     for month in ['current_month', 'previous_month']:
-        response += f"\n{'Текущий месяц' if month == 'current_month' else 'Прошлый месяц'}:\n"
-        for hashtag, count in stats[month].items():
-            response += f"  {hashtag}: {count}\n"
+        if stats[month]: #проверяем, пустой ли словарь внутри месяца
+            response += f"\n{service.format_month(current_month) if month == 'current_month' else service.format_month(previous_month)}:\n"
+            for hashtag, count in stats[month].items():
+                response += f"  {hashtag}: {count}\n"
 
     cursor.close()
     conn.close()
