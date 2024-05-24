@@ -103,17 +103,17 @@ def send_yearly_report(message):
 def handle_message(message):
     user_id = message.from_user.id
     username = message.from_user.username
-    text = message.text
-    if text is None:
-        text = message.caption
-    date = datetime.fromtimestamp(message.date).date()
+    text = message.caption if message.text is None else message.text
+    if text is not None:
+        date = datetime.fromtimestamp(message.date).date()
 
-    code, response, hashtag = check_message(text, TRACKED_HASHTAGS, message.content_type, username)
-    if code == 0:
-        bot.reply_to(message, response)
-    elif code == 1:
-        update_stats(user_id, username, date, hashtag)
-        bot.reply_to(message, response)
+        code, response, hashtag = check_message(text, TRACKED_HASHTAGS, message.content_type, username)
+        if code == 0:
+            bot.reply_to(message, response)
+        elif code == 1:
+            if not update_stats(user_id, username, date, hashtag):
+                response = 'Похвально! Но отметка за сегодня уже была 😊'
+            bot.reply_to(message, response)
 
 
 bot.polling(non_stop=True)
