@@ -142,6 +142,7 @@ def create_table():
 def update_stats(user_id, username, name, date, hashtag):
     """
     Method performs the addition of a new user to the database table
+    :param name: user first name and last name
     :param user_id: int
     :param username: format @username
     :param date: format YYYY-MM-DD
@@ -171,9 +172,10 @@ def update_stats(user_id, username, name, date, hashtag):
     return True
 
 
-def get_stats(user_id, username, current_month, previous_month):
+def get_stats(user_id, username, name, current_month, previous_month):
     """
     Method gets user's stats from the database table with users' statistics
+    :param name: user first name and last name (if not None)
     :param user_id: int
     :param username: format @username
     :param current_month: format YYYY-MM
@@ -202,7 +204,7 @@ def get_stats(user_id, username, current_month, previous_month):
             stats[month][hashtag] = 0
         stats[month][hashtag] += 1
 
-    response = f"Статистика для пользователя @{username}:\n"
+    response = f"Статистика для пользователя {name}:\n" if username is None else f"Статистика для пользователя @{username}:\n"
 
     for month in ['current_month', 'previous_month']:
         if stats[month]:  #проверяем, пустой ли словарь внутри месяца
@@ -226,10 +228,10 @@ def get_top_users(current_month, previous_month):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, hashtag, strftime('%Y-%m', date) as month, COUNT(*) as count 
+    SELECT username, name, hashtag, strftime('%Y-%m', date) as month, COUNT(*) as count 
     FROM hashtag_stats
     WHERE strftime('%Y-%m', date) = ? OR strftime('%Y-%m', date) = ?
-    GROUP BY username, hashtag, month
+    GROUP BY username, name, hashtag, month
     ORDER BY month, count DESC
     ''', (current_month, previous_month))
 
@@ -239,12 +241,15 @@ def get_top_users(current_month, previous_month):
     top_users = {current_month_formatted: {}, previous_month_formatted: {}}
 
     for row in rows:
-        username, hashtag, month, count = row
+        username, name, hashtag, month, count = row
         period = current_month_formatted if month == current_month else previous_month_formatted
         if hashtag not in top_users[period]:
             top_users[period][hashtag] = []
         if len(top_users[period][hashtag]) < 5:
-            top_users[period][hashtag].append((username, count))
+            if username is None:
+                top_users[period][hashtag].append((name, count))
+            else:
+                top_users[period][hashtag].append((f'@{username}', count))
 
     cursor.close()
     conn.close()

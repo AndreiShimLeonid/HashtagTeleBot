@@ -23,9 +23,11 @@ def send_stats(message):
     """
     user_id = message.from_user.id
     username = message.from_user.username
+    temp = f'{message.from_user.first_name} {message.from_user.last_name}'
+    name = f'{message.from_user.first_name if message.from_user.last_name is None else temp}'
     current_month = datetime.fromtimestamp(message.date).strftime('%Y-%m')
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-    response = get_stats(user_id, username, current_month, previous_month)
+    response = get_stats(user_id, username, name, current_month, previous_month)
 
     if response[0] == 0:
         bot.reply_to(message, "У вас нет упоминаний отслеживаемых хештегов.")
@@ -55,7 +57,7 @@ def send_top_users(message):
         for hashtag, users in top_users[month].items():
             response += f"\n  {hashtag}:\n"
             for username, count in users:
-                response += f"    @{username}: {count}\n"
+                response += f"    {username}: {count}\n"
 
     bot.reply_to(message, response)
 
@@ -120,7 +122,8 @@ def send_yearly_report(message):
 def handle_message(message):
     user_id = message.from_user.id
     username = message.from_user.username
-    name = f'{message.from_user.first_name} {message.from_user.last_name}'
+    temp = f'{message.from_user.first_name} {message.from_user.last_name}'
+    name = f'{message.from_user.first_name if message.from_user.last_name is None else temp}'
     text = message.caption if message.text is None else message.text
     if text is not None:
         date = datetime.fromtimestamp(message.date).date()

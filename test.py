@@ -1,4 +1,5 @@
 import datetime
+import json
 import unittest
 import sqlite3
 import random
@@ -39,12 +40,55 @@ print(date_time.strftime('%Y-%m-%d %H:%M:%S'))
 db.add_user(user_id=1, first_name='Andrei', last_name='Shim', username='aka_Andrei')
 db.remove_user(user_id=1, username='aka_Andrei')
 
-update_stats(1357737507, 'shimandrei', '2024-04-01', '#добрый')
-update_stats(1357737507, 'shimandrei', '2024-04-02', '#добрый')
-update_stats(1357737507, 'shimandrei', '2024-04-03', '#добрый')
-update_stats(1357737507, 'shimandrei', '2024-04-04', '#добрый')
-update_stats(1357737507, 'shimandrei', '2024-04-05', '#добрый')
-update_stats(1357737507, 'shimandrei', '2024-04-05', '#недобрый')
+
+def random_date(start_date, end_date):
+    # Преобразуем строки дат в объекты datetime
+    start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+    end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+
+    # Вычисляем разницу в днях между датами
+    delta = end_dt - start_dt
+
+    # Выбираем случайное количество дней в этом диапазоне
+    random_days = random.randint(0, delta.days)
+
+    # Добавляем случайное количество дней к начальной дате
+    random_dt = start_dt + timedelta(days=random_days)
+
+    # Преобразуем результат обратно в строку формата yyyy-mm-dd
+    return random_dt.strftime('%Y-%m-%d')
+
+
+# Пример использования
+start_date = '2024-04-01'
+end_date = '2024-05-31'
+
+
+def random_user(users_file_name):
+    users = []
+    with open(users_file_name, 'r', encoding='utf-8') as f:
+        for line in f:
+            user = json.loads(line)
+            temp = f'{user['first_name']} {user['last_name']}'
+            name = f'{user['first_name'] if user['last_name'] is None else temp}'
+            users.append([user['id'], user['username'], name])
+    return random.choice(users)
+
+hashtags = ['#добрый', '#недобрый']
+for i in range(500):
+    user = random_user('user_info.txt')
+    update_stats(user_id=user[0], username=user[1], name=user[2], date=random_date(start_date,end_date), hashtag=random.choice(hashtags))
+
+
+print(get_stats(user_id=818537230, username='katess8', name='Ekaterina Katess8', current_month='2024-05', previous_month='2024-04'))
+print(get_stats(user_id=336055079, username='Sergey_aka_Nikola', name='Сергей Никольский', current_month='2024-05', previous_month='2024-04'))
+print(get_stats(user_id=2050825648, username=None, name='Евгений Андреев', current_month='2024-05', previous_month='2024-04'))
+
+for i in range(100):
+    user = random_user('user_info.txt')
+    print(get_stats(user_id=user[0], username=user[1], name=user[2], current_month='2024-05', previous_month='2024-04'))
+
+
 # update_stats(1, 'user2', self.previous_date, '#hashtag1')
 # update_stats(1, 'user3', self.previous_date, '#hashtag1')
 # update_stats(1, 'user4', self.previous_date, '#hashtag1')
