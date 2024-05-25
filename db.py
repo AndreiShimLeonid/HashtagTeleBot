@@ -127,6 +127,7 @@ def create_table():
         CREATE TABLE IF NOT EXISTS hashtag_stats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
+            name TEXT,
             username TEXT,
             date TEXT,
             hashtag TEXT,
@@ -138,7 +139,7 @@ def create_table():
     conn.close()
 
 
-def update_stats(user_id, username, date, hashtag):
+def update_stats(user_id, username, name, date, hashtag):
     """
     Method performs the addition of a new user to the database table
     :param user_id: int
@@ -151,19 +152,19 @@ def update_stats(user_id, username, date, hashtag):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    INSERT INTO hashtag_stats (user_id, username, date, hashtag)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO hashtag_stats (user_id, username, name, date, hashtag)
+    VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(user_id, username, date, hashtag)
     DO NOTHING
-    ''', (user_id, username, date, hashtag))
+    ''', (user_id, username, name, date, hashtag))
     if cursor.rowcount == 0:
-        print(f"Conflict occurred: The row {user_id, username, date, hashtag} already exists.")
+        print(f"Conflict occurred: The row {user_id, username, name, date, hashtag} already exists.")
         conn.commit()
         cursor.close()
         conn.close()
         return False
 
-    print(f"Row {user_id, username, date, hashtag} inserted successfully.")
+    print(f"Row {user_id, username, name, date, hashtag} inserted successfully.")
     conn.commit()
     cursor.close()
     conn.close()

@@ -120,6 +120,7 @@ def send_yearly_report(message):
 def handle_message(message):
     user_id = message.from_user.id
     username = message.from_user.username
+    name = f'{message.from_user.first_name} {message.from_user.last_name}'
     text = message.caption if message.text is None else message.text
     if text is not None:
         date = datetime.fromtimestamp(message.date).date()
@@ -128,7 +129,7 @@ def handle_message(message):
         if code == 0:
             bot.reply_to(message, response)
         elif code == 1:
-            if not update_stats(user_id, username, date, hashtag):
+            if not update_stats(user_id, username, name, date, hashtag):
                 response = 'Похвально! Но отметка за сегодня уже была 😊'
             bot.reply_to(message, response)
 
