@@ -75,7 +75,7 @@ def random_user(users_file_name):
     return random.choice(users)
 
 hashtags = ['#добрый', '#недобрый']
-for i in range(0):
+for i in range(500):
     user = random_user('user_info.txt')
     update_stats(user_id=user[0], username=user[1], name=user[2], date=random_date(start_date,end_date), hashtag=random.choice(hashtags))
 

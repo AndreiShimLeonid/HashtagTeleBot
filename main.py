@@ -1,10 +1,9 @@
-import os
-
 import telebot
 from datetime import datetime, timedelta
 import db
 import service
 from check import check_message
+
 # from db import (create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report,
 #                 get_annual_report, get_users_list)
 
@@ -18,6 +17,20 @@ if __name__ == '__main__':
 def send_file(chat_id, file_path):
     with open(file_path, 'r') as file:
         bot.send_document(chat_id, file)
+
+
+# Обработчик команды /start
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = telebot.types.ReplyKeyboardMarkup(row_width=2)
+
+    button1 = telebot.types.KeyboardButton('/stats')
+    button2 = telebot.types.KeyboardButton('/top')
+    button4 = telebot.types.KeyboardButton('/monthly_report')
+    button5 = telebot.types.KeyboardButton('/annual_report')
+    button3 = telebot.types.KeyboardButton('/download')
+    markup.add(button1, button2, button3, button4, button5)
+    bot.reply_to(message, "Привет! Вот доступные кнопки:", reply_markup=markup)
 
 
 @bot.message_handler(commands=['stats'])
@@ -36,10 +49,12 @@ def send_stats(message):
     response = db.get_stats(user_id, username, name, current_month, previous_month)
 
     if response[0] == 0:
-        bot.reply_to(message, "У вас нет упоминаний отслеживаемых хештегов.")
+        bot.reply_to(message, "У вас нет упоминаний отслеживаемых хештегов.",
+                     reply_markup=telebot.types.ReplyKeyboardRemove())
         return
     else:
-        bot.reply_to(message, response[1])
+        bot.reply_to(message, response[1],
+                     reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 # Команда для получения топ 5 пользователей
@@ -67,7 +82,8 @@ def send_top_users(message):
                 i += 1
                 response += f"   {i}. {username}: {count}\n"
 
-    bot.reply_to(message, response)
+    bot.reply_to(message, response,
+                 reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(commands=['users'])
@@ -81,7 +97,8 @@ def send_users_list(message):
     users = db.get_users_list()
     for user in users:
         response += f'{user}\n'
-    bot.reply_to(message, response)
+    bot.reply_to(message, response,
+                 reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 # Команда для получения подробной статистики всех пользователей за прошедший месяц
@@ -102,7 +119,8 @@ def send_monthly_report(message):
         for hashtag, count in hashtags.items():
             response += f"  {hashtag}: {count}\n"
 
-    bot.reply_to(message, response)
+    bot.reply_to(message, response,
+                 reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(commands=['annual_report'])
@@ -112,19 +130,19 @@ def send_annual_report(message):
     :param message: command /yearly_report
     :return:
     """
-    global start_date
     today = datetime.now().strftime('%Y-%m-%d')
 
-    report = db.get_annual_report(start_date)
+    report = db.get_annual_report(db.start_date)
 
-    response = f"Общие итоги с {service.format_date(start_date)} по {service.format_date(today)}:\n"
+    response = f"Общие итоги с {service.format_date(db.start_date)} по {service.format_date(today)}:\n"
 
     for username, hashtags in report.items():
         response += f"\n{username}:\n"
         for hashtag, count in hashtags.items():
             response += f"  {hashtag}: {count}\n"
 
-    bot.reply_to(message, response)
+    bot.reply_to(message, response,
+                 reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 # Обработчик команды /download
@@ -132,7 +150,8 @@ def send_annual_report(message):
 def handle_download(message):
     db.export_report()
     send_file(message.chat.id, db.report_file_path)
-    bot.reply_to(message, "Таблица с отметками во вложении.")
+    bot.reply_to(message, "Таблица с отметками во вложении.",
+                 reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document'])

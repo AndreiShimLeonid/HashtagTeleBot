@@ -10,6 +10,7 @@ stats_db_name = 'hashtag_stats.db'
 start_date = '2024-05-01'
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
 
+
 def export_report():
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
@@ -24,7 +25,9 @@ def export_report():
             for row in rows:
                 line = ', '.join(map(str, row))
                 f.writelines(f'{line}\n')
-
+    else:
+        with open(report_file_path, 'w') as f:
+            f.writelines('N, user_id, name, username, date, hashtag\n')
 
 def get_users_list():
     """
