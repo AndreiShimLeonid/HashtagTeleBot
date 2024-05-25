@@ -43,7 +43,8 @@ def user_exists(id: int, username: str):
     with open(users_file_name, 'r', encoding='utf-8') as f:
         for line in f:
             user_info = json.loads(line)
-            if (user_info['id'] == id and user_info['id'] is not None) or (user_info['username'] == username and user_info['username'] is not None):
+            if (user_info['id'] == id and user_info['id'] is not None) or (
+                    user_info['username'] == username and user_info['username'] is not None):
                 return True
     return False
 
@@ -176,8 +177,8 @@ def get_stats(user_id, username, current_month, previous_month):
     :param username: format @username
     :param current_month: format YYYY-MM
     :param previous_month: format YYYY-MM
-    :return: [0, alert: str] if there is no any statistics for the user within 2 last months
-            [1, statistics: str] if there is any statistics for the user within 2 last months
+    :return: [0, alert] if there is no any statistics for the user within 2 last months
+            [1, statistics] if there is any statistics for the user within 2 last months
     """
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
@@ -203,7 +204,7 @@ def get_stats(user_id, username, current_month, previous_month):
     response = f"Статистика для пользователя @{username}:\n"
 
     for month in ['current_month', 'previous_month']:
-        if stats[month]: #проверяем, пустой ли словарь внутри месяца
+        if stats[month]:  #проверяем, пустой ли словарь внутри месяца
             response += f"\n{service.format_month(current_month) if month == 'current_month' else service.format_month(previous_month)}:\n"
             for hashtag, count in stats[month].items():
                 response += f"  {hashtag}: {count}\n"
@@ -232,12 +233,13 @@ def get_top_users(current_month, previous_month):
     ''', (current_month, previous_month))
 
     rows = cursor.fetchall()
-
-    top_users = {'current_month': {}, 'previous_month': {}}
+    current_month_formatted = service.format_month(current_month)
+    previous_month_formatted = service.format_month(previous_month)
+    top_users = {current_month_formatted: {}, previous_month_formatted: {}}
 
     for row in rows:
         username, hashtag, month, count = row
-        period = 'current_month' if month == current_month else 'previous_month'
+        period = current_month_formatted if month == current_month else previous_month_formatted
         if hashtag not in top_users[period]:
             top_users[period][hashtag] = []
         if len(top_users[period][hashtag]) < 5:

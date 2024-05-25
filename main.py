@@ -1,6 +1,7 @@
 import telebot
 from datetime import datetime, timedelta
 
+import service
 from check import check_message
 from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report, get_yearly_report
 
@@ -47,10 +48,11 @@ def send_top_users(message):
 
     response = f"Топ 5 пользователей по хештегам:\n"
 
-    for month in ['current_month', 'previous_month']:
-        response += f"\n{'Текущий месяц' if month == 'current_month' else 'Прошлый месяц'}:\n"
+    for month in [service.format_month(current_month), service.format_month(previous_month)]:
+        # response += f"\n{'Текущий месяц' if month == 'current_month' else 'Прошлый месяц'}:\n"
+        response += f'\n {month}\n'
         for hashtag, users in top_users[month].items():
-            response += f"  {hashtag}:\n"
+            response += f"\n  {hashtag}:\n"
             for username, count in users:
                 response += f"    @{username}: {count}\n"
 
