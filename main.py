@@ -56,8 +56,10 @@ def send_top_users(message):
         response += f'\n {month}\n'
         for hashtag, users in top_users[month].items():
             response += f"\n  {hashtag}:\n"
+            i = 0
             for username, count in users:
-                response += f"    {username}: {count}\n"
+                i += 1
+                response += f"   {i}. {username}: {count}\n"
 
     bot.reply_to(message, response)
 
