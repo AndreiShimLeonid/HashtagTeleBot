@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 
 import service
 from check import check_message
-from db import create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report, get_yearly_report
+from db import (create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report,
+                get_yearly_report, get_users_list)
 
 bot = telebot.TeleBot(read_token_from_file('token'))
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
@@ -56,6 +57,20 @@ def send_top_users(message):
             for username, count in users:
                 response += f"    @{username}: {count}\n"
 
+    bot.reply_to(message, response)
+
+
+@bot.message_handler(commands=['users'])
+def send_users_list(message):
+    """
+    Sends users list
+    :param message: command /users
+    :return:
+    """
+    response = ''
+    users = get_users_list()
+    for user in users:
+        response += f'{user}\n'
     bot.reply_to(message, response)
 
 
