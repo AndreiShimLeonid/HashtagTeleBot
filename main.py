@@ -26,9 +26,9 @@ def send_welcome(message):
 
     button1 = telebot.types.KeyboardButton('/stats')
     button2 = telebot.types.KeyboardButton('/top')
-    button4 = telebot.types.KeyboardButton('/monthly_report')
-    button5 = telebot.types.KeyboardButton('/annual_report')
-    button3 = telebot.types.KeyboardButton('/download')
+    button3 = telebot.types.KeyboardButton('/monthly_report')
+    button4 = telebot.types.KeyboardButton('/annual_report')
+    button5 = telebot.types.KeyboardButton('/download')
     markup.add(button1, button2, button3, button4, button5)
     bot.reply_to(message, "Привет! Вот доступные кнопки:", reply_markup=markup)
 
