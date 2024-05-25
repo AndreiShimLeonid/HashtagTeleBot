@@ -152,7 +152,7 @@ def create_table():
             username TEXT,
             date TEXT,
             hashtag TEXT,
-            UNIQUE(user_id, username, date, hashtag)
+            UNIQUE(user_id, date, hashtag)
         )
         ''')
     conn.commit()
@@ -176,7 +176,7 @@ def update_stats(user_id, username, name, date, hashtag):
     cursor.execute('''
     INSERT INTO hashtag_stats (user_id, username, name, date, hashtag)
     VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, username, date, hashtag)
+    ON CONFLICT(user_id, date, hashtag)
     DO NOTHING
     ''', (user_id, username, name, date, hashtag))
     if cursor.rowcount == 0:
