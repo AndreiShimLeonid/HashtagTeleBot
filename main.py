@@ -1,17 +1,23 @@
+import os
+
 import telebot
 from datetime import datetime, timedelta
-
+import db
 import service
 from check import check_message
-from db import (create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report,
-                get_yearly_report, get_users_list)
+# from db import (create_table, read_token_from_file, update_stats, get_stats, get_top_users, get_monthly_report,
+#                 get_annual_report, get_users_list)
 
-bot = telebot.TeleBot(read_token_from_file('token'))
-TRACKED_HASHTAGS = ['#добрый', '#недобрый']
-start_date = '2024-05-01'
+bot = telebot.TeleBot(db.read_token_from_file('token'))
 
 if __name__ == '__main__':
-    create_table()
+    db.create_table()
+
+
+# Функция для отправки файла
+def send_file(chat_id, file_path):
+    with open(file_path, 'r') as file:
+        bot.send_document(chat_id, file)
 
 
 @bot.message_handler(commands=['stats'])
@@ -27,7 +33,7 @@ def send_stats(message):
     name = f'{message.from_user.first_name if message.from_user.last_name is None else temp}'
     current_month = datetime.fromtimestamp(message.date).strftime('%Y-%m')
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-    response = get_stats(user_id, username, name, current_month, previous_month)
+    response = db.get_stats(user_id, username, name, current_month, previous_month)
 
     if response[0] == 0:
         bot.reply_to(message, "У вас нет упоминаний отслеживаемых хештегов.")
@@ -47,7 +53,7 @@ def send_top_users(message):
     current_month = datetime.fromtimestamp(message.date).strftime('%Y-%m')
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
 
-    top_users = get_top_users(current_month, previous_month)
+    top_users = db.get_top_users(current_month, previous_month)
 
     response = f"Топ 5 пользователей по хештегам:\n"
 
@@ -72,7 +78,7 @@ def send_users_list(message):
     :return:
     """
     response = ''
-    users = get_users_list()
+    users = db.get_users_list()
     for user in users:
         response += f'{user}\n'
     bot.reply_to(message, response)
@@ -87,37 +93,46 @@ def send_monthly_report(message):
     :return:
     """
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-    report = get_monthly_report(previous_month)
+    report = db.get_monthly_report(previous_month)
 
     response = f"Подробная статистика за прошедший месяц:\n"
 
     for username, hashtags in report.items():
-        response += f"\n@{username}:\n"
+        response += f"\n{username}:\n"
         for hashtag, count in hashtags.items():
             response += f"  {hashtag}: {count}\n"
 
     bot.reply_to(message, response)
 
 
-@bot.message_handler(commands=['yearly_report'])
-def send_yearly_report(message):
+@bot.message_handler(commands=['annual_report'])
+def send_annual_report(message):
     """
     Send report from start date till now
     :param message: command /yearly_report
     :return:
     """
     global start_date
+    today = datetime.now().strftime('%Y-%m-%d')
 
-    report = get_yearly_report(start_date)
+    report = db.get_annual_report(start_date)
 
-    response = f"Общие итоги с 1 мая 2024 года по текущую дату:\n"
+    response = f"Общие итоги с {service.format_date(start_date)} по {service.format_date(today)}:\n"
 
     for username, hashtags in report.items():
-        response += f"\n@{username}:\n"
+        response += f"\n{username}:\n"
         for hashtag, count in hashtags.items():
             response += f"  {hashtag}: {count}\n"
 
     bot.reply_to(message, response)
+
+
+# Обработчик команды /download
+@bot.message_handler(commands=['download'])
+def handle_download(message):
+    db.export_report()
+    send_file(message.chat.id, db.report_file_path)
+    bot.reply_to(message, "Таблица с отметками во вложении.")
 
 
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document'])
@@ -130,11 +145,11 @@ def handle_message(message):
     if text is not None:
         date = datetime.fromtimestamp(message.date).date()
 
-        code, response, hashtag = check_message(text, TRACKED_HASHTAGS, message.content_type, username)
+        code, response, hashtag = check_message(text, db.TRACKED_HASHTAGS, message.content_type, username)
         if code == 0:
             bot.reply_to(message, response)
         elif code == 1:
-            if not update_stats(user_id, username, name, date, hashtag):
+            if not db.update_stats(user_id, username, name, date, hashtag):
                 response = 'Похвально! Но отметка за сегодня уже была 😊'
             bot.reply_to(message, response)
 

@@ -4,8 +4,26 @@ import sqlite3
 
 import service
 
+report_file_path = 'report.txt'
 users_file_name = 'user_info.txt'
 stats_db_name = 'hashtag_stats.db'
+start_date = '2024-05-01'
+TRACKED_HASHTAGS = ['#добрый', '#недобрый']
+
+def export_report():
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT * FROM hashtag_stats
+    ''', )
+    rows = cursor.fetchall()
+
+    if rows:
+        with open(report_file_path, 'w') as f:
+            f.writelines('N, user_id, name, username, date, hashtag\n')
+            for row in rows:
+                line = ', '.join(map(str, row))
+                f.writelines(f'{line}\n')
 
 
 def get_users_list():
@@ -266,11 +284,11 @@ def get_monthly_report(previous_month):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, hashtag, COUNT(*) as count 
+    SELECT username, name, hashtag, COUNT(*) as count 
     FROM hashtag_stats
     WHERE strftime('%Y-%m', date) = ?
-    GROUP BY username, hashtag
-    ORDER BY username, hashtag
+    GROUP BY username, name, hashtag
+    ORDER BY username, name, hashtag
     ''', (previous_month,))
 
     rows = cursor.fetchall()
@@ -278,18 +296,18 @@ def get_monthly_report(previous_month):
     report = {}
 
     for row in rows:
-        username, hashtag, count = row
-        if username not in report:
-            report[username] = {}
-        report[username][hashtag] = count
-
+        username, name, hashtag, count = row
+        key = f'@{username}' if username else f'{name}'
+        if key not in report:
+            report[key] = {}
+        report[key][hashtag] = count
     cursor.close()
     conn.close()
     return report
 
 
 # Функция для получения общих итогов с 1 мая 2024 года по текущую дату
-def get_yearly_report(start_date):
+def get_annual_report(start_date):
     """
     Shows statistics from start_date till now
     :param start_date: format YYYY-MM-DD
@@ -298,11 +316,11 @@ def get_yearly_report(start_date):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, hashtag, COUNT(*) as count 
+    SELECT username, name, hashtag, COUNT(*) as count 
     FROM hashtag_stats
     WHERE date >= ?
-    GROUP BY username, hashtag
-    ORDER BY username, hashtag
+    GROUP BY username, name, hashtag
+    ORDER BY username, name, hashtag
     ''', (start_date,))
 
     rows = cursor.fetchall()
@@ -310,10 +328,11 @@ def get_yearly_report(start_date):
     report = {}
 
     for row in rows:
-        username, hashtag, count = row
-        if username not in report:
-            report[username] = {}
-        report[username][hashtag] = count
+        username, name, hashtag, count = row
+        key = f'@{username}' if username else f'{name}'
+        if key not in report:
+            report[key] = {}
+        report[key][hashtag] = count
 
     cursor.close()
     conn.close()

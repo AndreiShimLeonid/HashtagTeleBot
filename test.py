@@ -6,7 +6,7 @@ import random
 from datetime import datetime, timedelta
 
 import db
-from db import update_stats, get_stats, get_top_users, get_monthly_report, get_yearly_report
+from db import update_stats, get_stats, get_top_users, get_monthly_report, get_annual_report
 timestamp = 1629398400
 print(type(timestamp))
 date_time = datetime.fromtimestamp(timestamp)
@@ -75,18 +75,19 @@ def random_user(users_file_name):
     return random.choice(users)
 
 hashtags = ['#добрый', '#недобрый']
-for i in range(500):
+for i in range(0):
     user = random_user('user_info.txt')
     update_stats(user_id=user[0], username=user[1], name=user[2], date=random_date(start_date,end_date), hashtag=random.choice(hashtags))
 
-
-print(get_stats(user_id=818537230, username='katess8', name='Ekaterina Katess8', current_month='2024-05', previous_month='2024-04'))
-print(get_stats(user_id=336055079, username='Sergey_aka_Nikola', name='Сергей Никольский', current_month='2024-05', previous_month='2024-04'))
-print(get_stats(user_id=2050825648, username=None, name='Евгений Андреев', current_month='2024-05', previous_month='2024-04'))
-
-for i in range(100):
-    user = random_user('user_info.txt')
-    print(get_stats(user_id=user[0], username=user[1], name=user[2], current_month='2024-05', previous_month='2024-04'))
+# {"id": 1357737507, "first_name": "Andrei", "last_name": "Shim", "username": "shimandrei", "language_code": "ru", "is_bot": false}
+update_stats(1357737507, 'shimandrei', 'Andrei Shim', '2024-04-30', '#добрый')
+# print(get_stats(user_id=818537230, username='katess8', name='Ekaterina Katess8', current_month='2024-05', previous_month='2024-04'))
+# print(get_stats(user_id=336055079, username='Sergey_aka_Nikola', name='Сергей Никольский', current_month='2024-05', previous_month='2024-04'))
+# print(get_stats(user_id=2050825648, username=None, name='Евгений Андреев', current_month='2024-05', previous_month='2024-04'))
+#
+# for i in range(100):
+#     user = random_user('user_info.txt')
+#     print(get_stats(user_id=user[0], username=user[1], name=user[2], current_month='2024-05', previous_month='2024-04'))
 
 
 # update_stats(1, 'user2', self.previous_date, '#hashtag1')
