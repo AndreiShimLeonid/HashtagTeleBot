@@ -9,7 +9,7 @@ users_file_name = 'user_info.txt'
 stats_db_name = 'hashtag_stats.db'
 start_date = '2024-05-01'
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
-
+admin_id = 1357737507
 
 def create_users_list():
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)

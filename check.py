@@ -21,6 +21,5 @@ def check_message(text: str, hashtags: list, content_type: str, username: str, u
                 service.log_write(f'-- Failed to update database - no picture with hashtag from @{username} ID {user_id}')
                 return [0, "Не верю. Где ваши доказательства?", hashtag]
             else:
-                service.log_write(f'-- DB is updated - visual content with hashtag from @{username} ID {user_id}')
                 return [1, "👍", hashtag]
     return [2, None, None]

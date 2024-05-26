@@ -179,10 +179,18 @@ def handle_message(message):
         code, response, hashtag = check_message(text, db.TRACKED_HASHTAGS, message.content_type, username, user_id)
         if code == 0:
             bot.reply_to(message, response)
+            bot.send_message(db.admin_id, f'!!! Не засчитан - отсутствует доказательство к хештегу\n\n'
+                                          f'ID: {user_id}, Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
         elif code == 1:
             if not db.update_stats(user_id, username, name, date, hashtag):
-                response = 'Похвально! Но отметка за сегодня уже была 😊'
-            bot.reply_to(message, response)
+                bot.send_message(db.admin_id,
+                                 f'!!! Не засчитан - Повторный пост\n\n: ID: {user_id}, '
+                                 f'Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
+                # response = 'Похвально! Но отметка за сегодня уже была 😊'
+            else:
+                bot.send_message(db.admin_id, f'Пост засчитан\n\n'
+                                              f'ID: {user_id}, Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
+                # bot.reply_to(message, response)
 
 
 bot.polling(non_stop=True)
