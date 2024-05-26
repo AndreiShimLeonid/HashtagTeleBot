@@ -1,4 +1,7 @@
 import datetime
+import os
+
+import db
 
 
 def format_date(date_str):
@@ -37,3 +40,15 @@ def format_month(date_str):
     formatted_date = f"{month} {year}"
     return formatted_date
 
+
+def log_write(message: str):
+    log = f'{datetime.datetime.now()}: {message}'
+    if not os.path.exists(db.log_file):
+        with open(db.log_file, 'w', encoding='utf-8') as file:
+            file.write(f'{log}\n')
+            print(log)
+        return
+    with open(db.log_file, 'a', encoding='utf-8') as file:
+        file.write(f'{log}\n')
+        print(log)
+    return

@@ -1,14 +1,105 @@
 import json
-import os
 import sqlite3
-
 import service
 
+log_file = 'log.txt'
 report_file_path = 'report.txt'
+users_export_path = 'users_export.txt'
 users_file_name = 'user_info.txt'
 stats_db_name = 'hashtag_stats.db'
 start_date = '2024-05-01'
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
+
+
+def create_users_list():
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT,
+            username TEXT,
+            UNIQUE(user_id)
+        )
+        ''')
+    cursor.close()
+    conn.close()
+
+
+def set_users_list():
+    with open(users_file_name, 'r') as file:
+        users = file.readlines()
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    for line in users:
+        user = json.loads(line)
+        user_id, username = user.get('id'), user.get(
+            'username')
+        name = f"{user.get('first_name') if user.get('last_name') is None else user.get(
+            'first_name') + ' ' + user.get('last_name')}"
+        cursor.execute('''
+        INSERT INTO users_list (user_id, username, name)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id)
+        DO NOTHING
+        ''', (user_id, username, name))
+    if cursor.rowcount == 0:
+        service.log_write(f"db.set_users_list() -> Failed to update users list. "
+                          f"No lines inserted from '{users_file_name}'.")
+    else:
+        service.log_write(f"db.set_users_list() -> The users table has been updated from '{users_file_name}'.")
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def get_user_info(user_id: int):
+    """
+    Returns user info (name, username) from the table users_list (hashtag_stats.db)
+    :param user_id: unique user id - int
+    :return: name, username
+    """
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT name, username FROM users_list
+    WHERE user_id = ?
+    ''', (user_id,))
+    user_info = cursor.fetchone()
+    if user_info is None:
+        service.log_write(f"db.get_user_info(user_id: int) -> There is no info about user with id:{user_id} .")
+        cursor.close()
+        conn.close()
+        return None, None
+    else:
+        service.log_write(f"db.get_user_info(user_id: int) -> returned user info with id:{user_id}.")
+        cursor.close()
+        conn.close()
+        name, username = user_info
+        return name.replace('None', '').strip(), username
+
+
+def export_users():
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    SELECT * FROM users_list
+    ''', )
+    rows = cursor.fetchall()
+
+    if rows:
+        with open(users_export_path, 'w') as f:
+            f.writelines('N, user_id, name, username\n')
+            for row in rows:
+                line = ', '.join(map(str, row))
+                f.writelines(f'{line}\n')
+    else:
+        with open(users_export_path, 'w') as f:
+            f.writelines('N, user_id, name, username\n')
+    service.log_write(f"db.export_report() -> the users file has been created.")
+    cursor.close()
+    conn.close()
 
 
 def export_report():
@@ -28,101 +119,85 @@ def export_report():
     else:
         with open(report_file_path, 'w') as f:
             f.writelines('N, user_id, name, username, date, hashtag\n')
+    service.log_write(f"db.export_report() -> the report file has been updated.")
+    cursor.close()
+    conn.close()
+
 
 def get_users_list():
     """
-    This method reads file with users
-    :return: users list if the file exists
-            0 if the file doesn't exist
+    This method export users list from the db
+    :return: users list from db table users_list
     """
-    users = []
-    if not os.path.exists(users_file_name):
-        with open(users_file_name, 'w'):
-            pass
-        print(f'File {users_file_name} has not been found. New file has been created')
-        return 0
-    with open(users_file_name, 'r', encoding='utf-8') as f:
-        for line in f:
-            user_info = json.loads(line)
-            users.append(f"ID: {user_info['id']} "
-                         f"Username: {user_info['username']} "
-                         f"Name: {user_info['first_name']} {user_info['last_name']}\n")
-        print('allowed users: \n', *users)
-        return users
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM users_list
+        ''')
+    users = cursor.fetchall()
+    result = []
+    if not users:
+        service.log_write(f"db.get_users_list() -> the users table is empty.")
+    else:
+        for user in users:
+            result.append(user)
+        service.log_write(f"db.get_users_list() -> Success.")
+    return result
 
 
-def user_exists(id: int, username: str):
+def add_user(user_id, name, username=None):
     """
-    Checks if user exists
-    :param id: int
-    :param username: string
-    :return: True if user exists in the file
-            False if file doesn't exist or user doesn't exist in the file
-    """
-    if not os.path.exists(users_file_name):
-        return False
-    with open(users_file_name, 'r', encoding='utf-8') as f:
-        for line in f:
-            user_info = json.loads(line)
-            if (user_info['id'] == id and user_info['id'] is not None) or (
-                    user_info['username'] == username and user_info['username'] is not None):
-                return True
-    return False
-
-
-def add_user(user_id=None, first_name=None, last_name=None, username=None, language_code=None, is_bot=None):
-    """
-    This method performs the addition of new user to the user list.
+    This method performs the addition of new user to the user table in db.
+    :param name: user first name and last name
     :param user_id: unique int user id, None by default
-    :param language_code: ru, None by default
-    :param is_bot: false/true, None by default
-    :param last_name: string, None by default
-    :param first_name: string, None by default
     :param username: username, None by default
-    :return: 0 if the username/user_id is already in the users list
-            1 if the username/user_id has been added to the users list
-            -1 if the username/user_id both are None
+    :return: False if the username/user_id is already in the users list
+            True if the username/user_id has been added to the users list
     """
-    if user_id is None and username is None:
-        print(f'wrong username {username} and id {user_id}')
-        return -1
-    if user_exists(user_id, username):
-        print(f"User with ID {user_id} or username {username} already exists.")
-        return 0
-    user_info = {
-        'id': user_id,
-        'first_name': first_name,
-        'last_name': last_name,
-        'username': username,
-        'language_code': language_code,
-        'is_bot': is_bot
-    }
-    with open(users_file_name, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(user_info, ensure_ascii=False) + '\n')
-    print(f"Saved user with ID {user_id} and username {username}.")
-    return 1
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO users_list (user_id, username, name)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id)
+        DO NOTHING
+        ''', (user_id, username, name))
+    if cursor.rowcount == 0:
+        service.log_write(f"db.add_user() -> Failed to add user to the list. Conflict by id occurred ID:'{user_id}'.")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return False
+    service.log_write(f"db.add_user() -> New user has benn added to the list. ID:'{user_id}'.")
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
 
 
-def remove_user(user_id, username):
+def remove_user(user_id):
     """
     This method performs the deletion of the user from the user list.
-    :param username: username, example: username
     :return: False if the username is not in the users list
             True if the username has been deleted from the users list
     """
-    if user_exists(user_id, username):
-        users = []
-        with open(users_file_name, 'r', encoding='utf-8') as f:
-            for line in f:
-                users.append(json.loads(line))
-        with open(users_file_name, 'w', encoding='utf-8') as f:
-            for user in users:
-                if user['id'] != user_id or user['username'] != username:
-                    f.write(json.dumps(user, ensure_ascii=False) + '\n')
-            print(f'User {username} with id {user_id} has been deleted from the users list')
-            return True
-    print(f'Failed to find {username} in the users list')
-    return False
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+    DELETE FROM users_list WHERE user_id = ?
+    ''', (user_id,))
+    if cursor.rowcount == 0:
+        service.log_write(f"db.remove_user() -> Failed to remove. There is no user with ID:'{user_id}'.")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return False
+    else:
+        service.log_write(f"db.remove_user() -> The user has been removed from the list. ID:'{user_id}'.")
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
 
 
 def read_token_from_file(file: str):
@@ -143,7 +218,6 @@ def create_table():
     """
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
-    # Создание таблицы для хранения статистики
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS hashtag_stats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,13 +254,13 @@ def update_stats(user_id, username, name, date, hashtag):
     DO NOTHING
     ''', (user_id, username, name, date, hashtag))
     if cursor.rowcount == 0:
-        print(f"Conflict occurred: The row {user_id, username, name, date, hashtag} already exists.")
+        service.log_write(f"Conflict occurred: The row {user_id, username, name, date, hashtag} already exists.")
         conn.commit()
         cursor.close()
         conn.close()
         return False
 
-    print(f"Row {user_id, username, name, date, hashtag} inserted successfully.")
+    service.log_write(f"Row {user_id, username, name, date, hashtag} inserted successfully.")
     conn.commit()
     cursor.close()
     conn.close()
@@ -225,10 +299,11 @@ def get_stats(user_id, username, name, current_month, previous_month):
             stats[month][hashtag] = 0
         stats[month][hashtag] += 1
 
-    response = f"Статистика для пользователя {name}:\n" if username is None else f"Статистика для пользователя @{username}:\n"
+    response = f"Статистика для пользователя {name}:\n" if username is None else (f"Статистика "
+                                                                                  f"для пользователя @{username}:\n")
 
     for month in ['current_month', 'previous_month']:
-        if stats[month]:  #проверяем, пустой ли словарь внутри месяца
+        if stats[month]:  # проверяем, пустой ли словарь внутри месяца
             response += f"\n{service.format_month(current_month) if month == 'current_month' else service.format_month(previous_month)}:\n"
             for hashtag, count in stats[month].items():
                 response += f"  {hashtag}: {count}\n"
@@ -249,10 +324,10 @@ def get_top_users(current_month, previous_month):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, name, hashtag, strftime('%Y-%m', date) as month, COUNT(*) as count 
+    SELECT user_id, hashtag, strftime('%Y-%m', date) as month, COUNT(*) as count 
     FROM hashtag_stats
     WHERE strftime('%Y-%m', date) = ? OR strftime('%Y-%m', date) = ?
-    GROUP BY username, name, hashtag, month
+    GROUP BY user_id, hashtag, month
     ORDER BY month, count DESC
     ''', (current_month, previous_month))
 
@@ -262,7 +337,8 @@ def get_top_users(current_month, previous_month):
     top_users = {current_month_formatted: {}, previous_month_formatted: {}}
 
     for row in rows:
-        username, name, hashtag, month, count = row
+        user_id, hashtag, month, count = row
+        name, username = get_user_info(user_id)
         period = current_month_formatted if month == current_month else previous_month_formatted
         if hashtag not in top_users[period]:
             top_users[period][hashtag] = []
@@ -278,28 +354,29 @@ def get_top_users(current_month, previous_month):
 
 
 # Функция для получения подробной статистики всех пользователей за прошедший месяц
-def get_monthly_report(previous_month):
+def get_monthly_report(month):
     """
     This method shows hashtags statistics for previous month
-    :param previous_month: format YYYY-MM
+    :param month: month
     :return: str previous month statistics
     """
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, name, hashtag, COUNT(*) as count 
+    SELECT user_id, hashtag, COUNT(*) as count 
     FROM hashtag_stats
     WHERE strftime('%Y-%m', date) = ?
-    GROUP BY username, name, hashtag
-    ORDER BY username, name, hashtag
-    ''', (previous_month,))
+    GROUP BY user_id, hashtag
+    ORDER BY hashtag
+    ''', (month,))
 
     rows = cursor.fetchall()
 
     report = {}
 
     for row in rows:
-        username, name, hashtag, count = row
+        user_id, hashtag, count = row
+        name, username = get_user_info(user_id)
         key = f'@{username}' if username else f'{name}'
         if key not in report:
             report[key] = {}
@@ -319,11 +396,11 @@ def get_annual_report(start_date):
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
-    SELECT username, name, hashtag, COUNT(*) as count 
+    SELECT user_id, hashtag, COUNT(*) as count 
     FROM hashtag_stats
     WHERE date >= ?
-    GROUP BY username, name, hashtag
-    ORDER BY username, name, hashtag
+    GROUP BY user_id, hashtag
+    ORDER BY user_id, hashtag
     ''', (start_date,))
 
     rows = cursor.fetchall()
@@ -331,7 +408,8 @@ def get_annual_report(start_date):
     report = {}
 
     for row in rows:
-        username, name, hashtag, count = row
+        user_id, hashtag, count = row
+        name, username = get_user_info(user_id)
         key = f'@{username}' if username else f'{name}'
         if key not in report:
             report[key] = {}

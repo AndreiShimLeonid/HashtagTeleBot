@@ -11,6 +11,8 @@ bot = telebot.TeleBot(db.read_token_from_file('token'))
 
 if __name__ == '__main__':
     db.create_table()
+    db.create_users_list()
+    db.set_users_list()
 
 
 # Функция для отправки файла
@@ -30,7 +32,7 @@ def send_welcome(message):
     button4 = telebot.types.KeyboardButton('/annual_report')
     button5 = telebot.types.KeyboardButton('/download')
     markup.add(button1, button2, button3, button4, button5)
-    bot.reply_to(message, "Привет! Вот доступные кнопки:", reply_markup=markup)
+    bot.reply_to(message, "Привет! Вот доступные команды:", reply_markup=markup)
 
 
 @bot.message_handler(commands=['stats'])
@@ -70,10 +72,9 @@ def send_top_users(message):
 
     top_users = db.get_top_users(current_month, previous_month)
 
-    response = f"Топ 5 пользователей по хештегам:\n"
+    response = f"Топ 5 кордонцев по хештегам:\n"
 
     for month in [service.format_month(current_month), service.format_month(previous_month)]:
-        # response += f"\n{'Текущий месяц' if month == 'current_month' else 'Прошлый месяц'}:\n"
         response += f'\n {month}\n'
         for hashtag, users in top_users[month].items():
             response += f"\n  {hashtag}:\n"
@@ -109,16 +110,19 @@ def send_monthly_report(message):
     :param message: command /monthly_stats
     :return:
     """
+    current_month = datetime.now().strftime('%Y-%m')
     previous_month = (datetime.fromtimestamp(message.date).replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-    report = db.get_monthly_report(previous_month)
+    response = ''
 
-    response = f"Подробная статистика за прошедший месяц:\n"
-
-    for username, hashtags in report.items():
-        response += f"\n{username}:\n"
-        for hashtag, count in hashtags.items():
-            response += f"  {hashtag}: {count}\n"
-
+    def create_response(report, month):
+        result = f"Подробная статистика за {service.format_month(month)}:\n"
+        for username, hashtags in report.items():
+            result += f"\n{username}:\n"
+            for hashtag, count in hashtags.items():
+                result += f"  {hashtag}: {count}\n"
+        return result
+    for month in [current_month, previous_month]:
+        response += f'{create_response(db.get_monthly_report(month), month)}'
     bot.reply_to(message, response,
                  reply_markup=telebot.types.ReplyKeyboardRemove())
 
@@ -154,6 +158,14 @@ def handle_download(message):
                  reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
+# Обработчик команды /download
+@bot.message_handler(commands=['users'])
+def handle_download(message):
+    db.export_users()
+    send_file(message.chat.id, db.users_export_path)
+    bot.reply_to(message, "Таблица с пользователями во вложении.")
+
+
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document'])
 def handle_message(message):
     user_id = message.from_user.id
@@ -164,7 +176,7 @@ def handle_message(message):
     if text is not None:
         date = datetime.fromtimestamp(message.date).date()
 
-        code, response, hashtag = check_message(text, db.TRACKED_HASHTAGS, message.content_type, username)
+        code, response, hashtag = check_message(text, db.TRACKED_HASHTAGS, message.content_type, username, user_id)
         if code == 0:
             bot.reply_to(message, response)
         elif code == 1:
