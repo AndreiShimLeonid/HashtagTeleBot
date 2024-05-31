@@ -174,7 +174,9 @@ def handle_message(message):
     name = f'{message.from_user.first_name if message.from_user.last_name is None else temp}'
     text = message.caption if message.text is None else message.text
     if text is not None:
-        date = datetime.fromtimestamp(message.date).date()
+        # Сдвинутое время на 7 часов назад для учёта ночных (до 7 утра) отметок
+        shifted_date = (datetime.fromtimestamp(message.date) - timedelta(hours=7))
+        date = datetime.fromtimestamp(message.date)
 
         code, response, hashtag = check_message(text, db.TRACKED_HASHTAGS, message.content_type, username, user_id)
         if code == 0:
@@ -182,13 +184,15 @@ def handle_message(message):
             bot.send_message(db.admin_id, f'!!! Не засчитан - отсутствует доказательство к хештегу\n\n'
                                           f'ID: {user_id}, Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
         elif code == 1:
-            if not db.update_stats(user_id, username, name, date, hashtag):
+            if not db.update_stats(user_id, username, name, shifted_date.date(), hashtag):
                 bot.send_message(db.admin_id,
                                  f'!!! Не засчитан - Повторный пост\n\n: ID: {user_id}, '
                                  f'Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
                 # response = 'Похвально! Но отметка за сегодня уже была 😊'
             else:
                 bot.send_message(db.admin_id, f'Пост засчитан\n\n'
+                                              f'Date: {date.strftime("%d/%m/%Y, %H:%M:%S")} -> '
+                                              f'goes as {shifted_date.strftime("%d/%m/%Y, %H:%M:%S")}\n'
                                               f'ID: {user_id}, Name: "{name}", Username: "{username}", hashtag: "{hashtag}"')
                 # bot.reply_to(message, response)
 
