@@ -166,6 +166,35 @@ def handle_download(message):
     bot.reply_to(message, "Таблица с пользователями во вложении.")
 
 
+# @bot.message_handler(commands=['delete'])
+# def handle_download(message):
+#     user_data[message.from_user.id] = {}
+#     bot.send_message(message.chat.id, "Введите номер строки в таблице для удаления")
+#
+
+# Обработчик команды /insert
+@bot.message_handler(commands=['insert'])
+def handle_download(message):
+    msg = bot.send_message(message.chat.id, "Введите информацию в формате: username, name, date, hashtag")
+    bot.register_next_step_handler(msg, handle_user_input)
+
+
+def handle_user_input(message):
+    try:
+        user_id, username, name, date, hashtag = map(str.strip, message.text.split(','))
+
+        # Вставка данных в базу данных
+        if db.update_stats(user_id, username, name, date, hashtag):
+            bot.send_message(message.chat.id, "Запись успешно занесена")
+        else:
+            bot.send_message(message.chat.id, "При занесении записи возникли проблемы")
+    except ValueError:
+        msg = bot.send_message(message.chat.id, "Ошибка в формате данных. Попробуйте еще раз.")
+        bot.register_next_step_handler(msg, handle_user_input)
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
+
+
 @bot.message_handler(func=lambda message: True, content_types=['text', 'photo', 'video', 'document', 'animation'])
 def handle_message(message):
     user_id = message.from_user.id

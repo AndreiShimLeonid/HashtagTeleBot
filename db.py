@@ -11,6 +11,22 @@ start_date = '2024-05-01'
 TRACKED_HASHTAGS = ['#добрый', '#недобрый']
 admin_id = 1357737507
 
+
+def delete_row_from_db(row_id: int):
+    conn = sqlite3.connect(stats_db_name, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        DELETE FROM hashtag_stats WHERE id = ?
+    ''', (row_id,))
+    if cursor.rowcount == 0:
+        service.log_write(f"db.delete_row_from_db() -> row id:{row_id} deletion failed.")
+    else:
+        service.log_write(f"db.delete_row_from_db() -> row id:{row_id} deletion completed.")
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
 def create_users_list():
     conn = sqlite3.connect(stats_db_name, check_same_thread=False)
     cursor = conn.cursor()
