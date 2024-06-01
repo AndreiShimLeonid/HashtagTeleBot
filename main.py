@@ -191,13 +191,13 @@ def handle_user_input_delete(message):
 # Обработчик команды /insert
 @bot.message_handler(commands=['insert'])
 def handle_insert(message):
-    msg = bot.send_message(message.chat.id, "Введите информацию в формате: username, name, date, hashtag")
+    msg = bot.send_message(message.chat.id, "Введите информацию в формате: user_id, name, username, date, hashtag")
     bot.register_next_step_handler(msg, handle_user_input)
 
 
 def handle_user_input(message):
     try:
-        user_id, username, name, date, hashtag = map(str.strip, message.text.split(','))
+        user_id, name, username, date, hashtag = map(str.strip, message.text.split(','))
 
         # Вставка данных в базу данных
         if db.update_stats(user_id, username, name, date, hashtag):
