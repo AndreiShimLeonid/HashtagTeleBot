@@ -43,14 +43,16 @@ import db
 # user = {"id": 396528814, "first_name": "Kirill", "last_name": "Nikolskiy", "username": "kirnikolskiy", "language_code": None, "is_bot": False}
 # user_id, name, username = user.get('id'), f"{user.get('first_name')} {user.get('last_name')}", user.get('username')
 # print (user_id, name, username)
+#
+# conn = sqlite3.connect(db.stats_db_name, check_same_thread=False)
+# cursor = conn.cursor()
+# cursor.execute('''
+#     DROP TABLE IF EXISTS users_list
+#     ''')
+# cursor.close()
+# conn.close()
 
-conn = sqlite3.connect(db.stats_db_name, check_same_thread=False)
-cursor = conn.cursor()
-cursor.execute('''
-    DROP TABLE IF EXISTS users_list
-    ''')
-cursor.close()
-conn.close()
+db.delete_row_from_db(243)
 
 # import sqlite3
 #

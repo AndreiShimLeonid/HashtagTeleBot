@@ -20,11 +20,16 @@ def delete_row_from_db(row_id: int):
     ''', (row_id,))
     if cursor.rowcount == 0:
         service.log_write(f"db.delete_row_from_db() -> row id:{row_id} deletion failed.")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return False
     else:
         service.log_write(f"db.delete_row_from_db() -> row id:{row_id} deletion completed.")
-    conn.commit()
-    cursor.close()
-    conn.close()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
 
 
 def create_users_list():
