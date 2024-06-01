@@ -166,15 +166,31 @@ def handle_download(message):
     bot.reply_to(message, "Таблица с пользователями во вложении.")
 
 
-# @bot.message_handler(commands=['delete'])
-# def handle_download(message):
-#     user_data[message.from_user.id] = {}
-#     bot.send_message(message.chat.id, "Введите номер строки в таблице для удаления")
-#
+@bot.message_handler(commands=['delete'])
+def handle_delete(message):
+    msg = bot.send_message(message.chat.id, "Введите номер строки в таблице для удаления")
+    bot.register_next_step_handler(msg, handle_user_input_delete)
+
+
+def handle_user_input_delete(message):
+    try:
+        row_id = int(message.text)
+
+        # Вставка данных в базу данных
+        if db.delete_row_from_db(row_id):
+            bot.send_message(message.chat.id, "Запись в БД успешно удалена")
+        else:
+            bot.send_message(message.chat.id, "При удалении записи возникли проблемы")
+    except ValueError:
+        msg = bot.send_message(message.chat.id, "Ошибка в формате данных. Попробуйте еще раз.")
+        bot.register_next_step_handler(msg, handle_user_input)
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Произошла ошибка: {e}")
+
 
 # Обработчик команды /insert
 @bot.message_handler(commands=['insert'])
-def handle_download(message):
+def handle_insert(message):
     msg = bot.send_message(message.chat.id, "Введите информацию в формате: username, name, date, hashtag")
     bot.register_next_step_handler(msg, handle_user_input)
 
